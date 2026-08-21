@@ -1,3 +1,4 @@
+import "dotenv/config";
 import pg from "pg";
 import { randomUUID } from "node:crypto";
 
@@ -7,7 +8,20 @@ if (!connectionString) {
   process.exit(1);
 }
 
-const pool = new pg.Pool({ connectionString });
+function isLocalDatabase(url) {
+  try {
+    return ["localhost", "127.0.0.1", "::1"].includes(new URL(url).hostname);
+  } catch {
+    return false;
+  }
+}
+
+const pool = new pg.Pool({
+  connectionString,
+  ...(isLocalDatabase(connectionString)
+    ? {}
+    : { ssl: { rejectUnauthorized: false } }),
+});
 
 function q(sql, params = []) {
   return pool.query(sql, params);
