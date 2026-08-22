@@ -21,8 +21,10 @@ export default async function ConversationPage({
   const conversation = await getConversationForUser(conversationId, session.user.id);
   if (!conversation || !conversation.other) notFound();
 
-  await markMessagesDeliveredSilent(conversationId, session.user.id);
-  await markMessagesReadSilent(conversationId, session.user.id);
+  void Promise.all([
+    markMessagesDeliveredSilent(conversationId, session.user.id),
+    markMessagesReadSilent(conversationId, session.user.id),
+  ]);
 
   return (
     <section className="mx-auto w-full max-w-5xl px-2 py-4 sm:px-6 sm:py-6 flex flex-col flex-1">
