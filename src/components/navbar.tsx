@@ -70,10 +70,9 @@ export async function Navbar() {
         username: sessionUser.username,
       }
     : null;
-  const unread = user ? await getUnreadNotificationCount(user.id) : 0;
-  const notifications = user
-    ? await getRecentNotifications(user.id)
-    : [];
+  const [unread, notifications] = user
+    ? await Promise.all([getUnreadNotificationCount(user.id), getRecentNotifications(user.id)])
+    : [0, [] as Awaited<ReturnType<typeof getRecentNotifications>>];
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur">
