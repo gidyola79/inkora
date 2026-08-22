@@ -67,6 +67,11 @@ if (owner) {
   await q('UPDATE "User" SET username = $1 WHERE id = $2', ["olamide", owner.id]);
 }
 
+// Demo accounts use fake inboxes that can never receive verification mail,
+// so mark them as verified explicitly.
+await q(`UPDATE "User" SET "emailVerified" = true
+  WHERE email IN ('writer@inkora.dev', 'reader@inkora.dev', 'olamidexgideon@gmail.com')`);
+
 // Articles
 const art1 = randomUUID();
 const art2 = randomUUID();

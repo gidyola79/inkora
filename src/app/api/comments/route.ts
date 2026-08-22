@@ -1,12 +1,26 @@
 import { getSession } from "@/lib/auth-helpers";
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
+import { consumeRateLimit } from "@/lib/rate-limit";
+import { logSecurityEvent } from "@/lib/security-log";
 import { revalidatePath } from "next/cache";
 
 export async function POST(request: Request) {
   const session = await getSession();
   if (!session?.user) {
     return Response.json({ error: "Sign in to comment." }, { status: 401 });
+  }
+
+  const limit = await consumeRateLimit(`comment:${session.user.id}`, 30, 3600);
+  if (!limit.ok) {
+    logSecurityEvent("ratelimit.blocked", {
+      route: "/api/comments",
+      userId: session.user.id,
+    });
+    return Response.json(
+      { error: "You're commenting too quickly. Take a short break and try again." },
+      { status: 429 }
+    );
   }
 
   let body: { articleId?: string; content?: string };

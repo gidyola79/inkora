@@ -35,6 +35,9 @@ export const auth = betterAuth({
     enabled: true,
     autoSignIn: true,
     minPasswordLength: 8,
+    maxPasswordLength: 128,
+    requireEmailVerification: true,
+    resetPasswordTokenExpiresIn: 3600,
     sendResetPassword: async ({ user, url }) => {
       await sendResetPasswordEmail({ to: user.email, name: user.name, url });
     },
@@ -45,6 +48,23 @@ export const auth = betterAuth({
       await sendVerificationEmail({ to: user.email, name: user.name, url });
     },
   },
+  session: {
+    expiresIn: 60 * 60 * 24 * 7,
+    updateAge: 60 * 60 * 24,
+  },
+  rateLimit: {
+    enabled: true,
+    storage: "database",
+    window: 60,
+    max: 100,
+    customRules: {
+      "/sign-in/email": { window: 300, max: 8, storage: "database" },
+      "/sign-up/email": { window: 3600, max: 5, storage: "database" },
+      "/request-password-reset": { window: 3600, max: 5, storage: "database" },
+      "/reset-password": { window: 3600, max: 10, storage: "database" },
+    },
+  },
+  trustedOrigins: [process.env.BETTER_AUTH_URL ?? "http://localhost:3000"],
   user: {
     additionalFields: {
       username: {

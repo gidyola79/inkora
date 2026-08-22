@@ -258,3 +258,9 @@ model Subscriber {
   email     String   @unique
   createdAt DateTime @default(now())
 }
+
+model RateLimit {
+  key         String @id
+  count       Int
+  lastRequest Float
+}

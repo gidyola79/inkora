@@ -1,4 +1,7 @@
 import { v2 as cloudinary } from "cloudinary";
+import { getSession } from "@/lib/auth-helpers";
+import { consumeRateLimit } from "@/lib/rate-limit";
+import { logSecurityEvent } from "@/lib/security-log";
 
 export const runtime = "nodejs";
 
@@ -26,6 +29,20 @@ function configureCloudinary() {
 }
 
 export async function POST(request: Request) {
+  const session = await getSession();
+  if (!session?.user) {
+    return Response.json({ error: "Sign in to upload images." }, { status: 401 });
+  }
+
+  const limit = await consumeRateLimit(`upload:${session.user.id}`, 20, 3600);
+  if (!limit.ok) {
+    logSecurityEvent("ratelimit.blocked", { route: "/api/upload", userId: session.user.id });
+    return Response.json(
+      { error: `Too many uploads. Try again in about ${Math.ceil((limit.retryAfterSec ?? 60) / 60)} minutes.` },
+      { status: 429 }
+    );
+  }
+
   if (!configureCloudinary()) {
     return Response.json(
       { error: "Image uploads are not configured on this deployment." },

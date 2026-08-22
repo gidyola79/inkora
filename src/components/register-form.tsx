@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { signUp } from "@/lib/auth-client";
 import { optInToNewsletterAction } from "@/lib/actions";
@@ -46,11 +45,13 @@ function RequirementRow({ met, label }: { met: boolean; label: string }) {
 }
 
 export function RegisterForm() {
-  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [termsAgreed, setTermsAgreed] = useState(false);
   const [newsletterOptIn, setNewsletterOptIn] = useState(false);
+  const [awaitingVerification, setAwaitingVerification] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState("");
   const [isPending, startTransition] = useTransition();
 
   const metCount = PASSWORD_RULES.filter((rule) => rule.test(password)).length;
@@ -97,9 +98,33 @@ export function RegisterForm() {
           // Newsletter opt-in is best-effort; never block registration on it.
         }
       }
-      router.push("/dashboard");
-      router.refresh();
+      // Email verification is required: the verification link signs the
+      // user in automatically, so there is no session to navigate with yet.
+      setPendingEmail(email);
+      setAwaitingVerification(true);
     });
+  }
+
+  if (awaitingVerification) {
+    return (
+      <div className="flex flex-col gap-5">
+        <p
+          role="status"
+          className="rounded-xl border border-accent/30 bg-accent/10 px-4 py-4 text-sm leading-relaxed text-accent"
+        >
+          Almost there! We sent a verification link to{" "}
+          <span className="font-semibold">{pendingEmail}</span>. Open it to activate
+          your account - you&apos;ll be signed in automatically.
+        </p>
+        <p className="text-center text-sm text-muted">
+          Didn&apos;t get it? Check your spam folder, or{" "}
+          <Link href="/login" className="font-medium text-accent underline-offset-4 hover:underline">
+            try signing in
+          </Link>{" "}
+          in a few minutes.
+        </p>
+      </div>
+    );
   }
 
   return (
@@ -197,16 +222,54 @@ export function RegisterForm() {
             <path d="M7 11V7a5 5 0 0 1 10 0v4" />
           </svg>
           <input
-            type="password"
+            type={showPassword ? "text" : "password"}
             name="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             required
             autoComplete="new-password"
             placeholder="Create a strong password"
-            className="glass-input pl-10"
+            className="glass-input pl-10 pr-11"
             aria-describedby="password-rules"
           />
+          <button
+            type="button"
+            onClick={() => setShowPassword((value) => !value)}
+            aria-label={showPassword ? "Hide password" : "Show password"}
+            className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-muted transition-colors hover:bg-border/50 hover:text-foreground"
+          >
+            {showPassword ? (
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-4 w-4"
+                aria-hidden="true"
+              >
+                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 10 8 10 8a13.16 13.16 0 0 1-1.67 2.68" />
+                <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 8 10 8a9.74 9.74 0 0 0 5.39-1.61" />
+                <path d="M2 2l20 20" />
+                <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" />
+              </svg>
+            ) : (
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-4 w-4"
+                aria-hidden="true"
+              >
+                <path d="M2 12s3-8 10-8 10 8 10 8-3 8-10 8-10-8-10-8Z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            )}
+          </button>
         </div>
       </label>
 
@@ -245,13 +308,51 @@ export function RegisterForm() {
             <path d="M7 11V7a5 5 0 0 1 10 0v4" />
           </svg>
           <input
-            type="password"
+            type={showPassword ? "text" : "password"}
             name="confirmPassword"
             required
             autoComplete="new-password"
             placeholder="Repeat your password"
-            className="glass-input pl-10"
+            className="glass-input pl-10 pr-11"
           />
+          <button
+            type="button"
+            onClick={() => setShowPassword((value) => !value)}
+            aria-label={showPassword ? "Hide password" : "Show password"}
+            className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-muted transition-colors hover:bg-border/50 hover:text-foreground"
+          >
+            {showPassword ? (
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-4 w-4"
+                aria-hidden="true"
+              >
+                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 10 8 10 8a13.16 13.16 0 0 1-1.67 2.68" />
+                <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 8 10 8a9.74 9.74 0 0 0 5.39-1.61" />
+                <path d="M2 2l20 20" />
+                <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" />
+              </svg>
+            ) : (
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-4 w-4"
+                aria-hidden="true"
+              >
+                <path d="M2 12s3-8 10-8 10 8 10 8-3 8-10 8-10-8-10-8Z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            )}
+          </button>
         </div>
       </label>
 

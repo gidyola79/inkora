@@ -9,6 +9,8 @@ import { generateUniqueSlug } from "@/lib/slug";
 import { articleFormSchema } from "@/lib/validation";
 import { createNotification } from "@/lib/notifications";
 import { generateFlashcards } from "@/lib/flashcards";
+import { consumeRateLimit, getClientIp } from "@/lib/rate-limit";
+import { logSecurityEvent } from "@/lib/security-log";
 
 export type ArticleActionState = {
   success: boolean;
@@ -478,7 +480,18 @@ export async function createFlashcardSetAction(
     cards = [];
   }
 
-  const validCards = cards.filter((c) => c.front?.trim() && c.back?.trim());
+  const validCards = cards
+    .filter((c) => c.front?.trim() && c.back?.trim())
+    .slice(0, 100);
+
+  const limit = await consumeRateLimit(`flashcards-create:${session.user.id}`, 30, 3600);
+  if (!limit.ok) {
+    logSecurityEvent("ratelimit.blocked", {
+      route: "createFlashcardSetAction",
+      userId: session.user.id,
+    });
+    return { success: false, message: "Too many sets created recently. Try again later." };
+  }
 
   const set = await prisma.flashcardSet.create({
     data: {
@@ -509,7 +522,16 @@ export async function generateFlashcardSetAction(formData: FormData): Promise<vo
   });
   if (!article) redirect("/dashboard/flashcards");
 
-  const cards = generateFlashcards(article.content);
+  const limit = await consumeRateLimit(`flashcards-gen:${session.user.id}`, 20, 3600);
+  if (!limit.ok) {
+    logSecurityEvent("ratelimit.blocked", {
+      route: "generateFlashcardSetAction",
+      userId: session.user.id,
+    });
+    redirect("/dashboard/flashcards?rate_limited=1");
+  }
+
+  const cards = generateFlashcards(article.content).slice(0, 50);
 
   const set = await prisma.flashcardSet.create({
     data: {
@@ -600,14 +622,29 @@ export async function resolveLoginIdentifierAction(
     return { success: false, message: "Enter your username or email and password." };
   }
 
+  const ip = await getClientIp();
+  const limit = await consumeRateLimit(`login-resolve:${ip}`, 10, 900);
+  if (!limit.ok) {
+    logSecurityEvent("ratelimit.blocked", { route: "resolveLoginIdentifier", ip });
+    return {
+      success: false,
+      message: "Too many attempts. Please wait a few minutes and try again.",
+    };
+  }
+
   let email = identifier;
   if (!identifier.includes("@")) {
     const user = await prisma.user.findUnique({
       where: { username: identifier.toLowerCase() },
       select: { email: true },
     });
+    // Deliberately vague on purpose: never reveal whether a username exists.
     if (!user) {
-      return { success: false, message: "No account found with that username." };
+      logSecurityEvent("auth.login_failed", { identifier, ip });
+      return {
+        success: false,
+        message: "We couldn't sign you in with those credentials.",
+      };
     }
     email = user.email;
   }
@@ -619,6 +656,15 @@ export async function getOrCreateConversationAction(formData: FormData): Promise
   const session = await requireUser();
   const otherUserId = String(formData.get("otherUserId") ?? "");
   if (!otherUserId || otherUserId === session.user.id) return null;
+
+  const targetUser = await prisma.user.findUnique({
+    where: { id: otherUserId },
+    select: { id: true },
+  });
+  if (!targetUser) return null;
+
+  const limit = await consumeRateLimit(`conversations:${session.user.id}`, 20, 3600);
+  if (!limit.ok) return null;
 
   const existing = await prisma.conversationParticipant.findMany({
     where: { userId: session.user.id },
@@ -652,6 +698,15 @@ export async function sendMessageAction(formData: FormData): Promise<void> {
   const nonce = String(formData.get("nonce") ?? "");
 
   if (!encryptedContent || !nonce) return;
+
+  const messageLimit = await consumeRateLimit(`messages:${session.user.id}`, 60, 60);
+  if (!messageLimit.ok) {
+    logSecurityEvent("ratelimit.blocked", {
+      route: "sendMessageAction",
+      userId: session.user.id,
+    });
+    return;
+  }
 
   const conversation = await prisma.conversation.findFirst({
     where: {
@@ -730,13 +785,22 @@ export async function changeEmailAction(
 
   await prisma.user.update({
     where: { id: session.user.id },
-    data: { email: newEmail },
+    data: { email: newEmail, emailVerified: false },
   });
 
+  // The new address is unverified - send a fresh verification link so the
+  // account stays recoverable and the next sign-in can complete.
+  try {
+    await auth.api.sendVerificationEmail({ body: { email: newEmail, callbackURL: "/" } });
+  } catch (error) {
+    console.error("[auth] verification email for changed address failed:", error);
+  }
+
+  logSecurityEvent("email.changed", { userId: session.user.id });
   revalidatePath("/dashboard/profile");
   return {
     success: true,
-    message: `Email updated. Use ${newEmail} the next time you sign in.`,
+    message: `Email updated. We sent a verification link to ${newEmail} - open it to keep full account access.`,
   };
 }
 
@@ -771,6 +835,7 @@ export async function deleteAccountAction(
     return { success: false, message: "Could not delete your account. Please try again." };
   }
 
+  logSecurityEvent("account.deleted", { userId: session.user.id });
   return { success: true, message: "Account deleted." };
 }
 
@@ -784,6 +849,13 @@ export async function subscribeAction(
 
   if (!EMAIL_PATTERN.test(email)) {
     return { success: false, message: "Enter a valid email address." };
+  }
+
+  const ip = await getClientIp();
+  const limit = await consumeRateLimit(`subscribe:${ip}`, 5, 3600);
+  if (!limit.ok) {
+    logSecurityEvent("ratelimit.blocked", { route: "subscribeAction", ip });
+    return { success: false, message: "Too many attempts. Please try again later." };
   }
 
   const existing = await prisma.subscriber.findUnique({ where: { email } });
@@ -805,6 +877,10 @@ export async function subscribeAction(
 }
 
 export async function optInToNewsletterAction(email: string) {
+  const ip = await getClientIp();
+  const limit = await consumeRateLimit(`optin:${ip}`, 10, 3600);
+  if (!limit.ok) return;
+
   const normalized = email.trim().toLowerCase();
   if (!EMAIL_PATTERN.test(normalized)) return;
   await prisma.subscriber.upsert({
