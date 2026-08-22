@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { MarkdownRenderer } from "@/components/markdown";
 import { EmojiPicker } from "@/components/emoji-picker";
+import { MentionDropdown, useMentionAutocomplete } from "@/components/mention-autocomplete";
 
 type ToolButton = {
   label: string;
@@ -41,6 +42,7 @@ export function MarkdownEditor({
   const [preview, setPreview] = useState(false);
   const [selection, setSelection] = useState({ start: 0, end: 0 });
   const [textarea, setTextarea] = useState<HTMLTextAreaElement | null>(null);
+  const { query: mentionQuery, results: mentionResults, loading: mentionLoading } = useMentionAutocomplete(value, selection.start);
 
   function applyInline(prefix: string, suffix: string, placeholderText: string) {
     const start = selection.start;
@@ -69,6 +71,23 @@ export function MarkdownEditor({
       if (!textarea) return;
       textarea.focus();
       textarea.setSelectionRange(start + text.length, start + text.length);
+    });
+  }
+
+  function handleMentionSelect(username: string) {
+    if (mentionQuery === null) return;
+    const before = value.slice(0, selection.start);
+    const atIdx = before.lastIndexOf("@" + mentionQuery);
+    if (atIdx === -1) return;
+    const after = value.slice(selection.start);
+    const next = value.slice(0, atIdx) + "@" + username + " " + after;
+    const newPos = atIdx + username.length + 2;
+    setValue(next);
+    setSelection({ start: newPos, end: newPos });
+    requestAnimationFrame(() => {
+      if (!textarea) return;
+      textarea.focus();
+      textarea.setSelectionRange(newPos, newPos);
     });
   }
 
@@ -210,39 +229,44 @@ export function MarkdownEditor({
           )}
         </div>
       ) : (
-        <textarea
-          ref={setTextarea}
-          name={name}
-          value={value}
-          onChange={(event) => {
-            setValue(event.target.value);
-            setSelection({
-              start: event.currentTarget.selectionStart,
-              end: event.currentTarget.selectionEnd,
-            });
-          }}
-          onSelect={(event) =>
-            setSelection({
-              start: event.currentTarget.selectionStart,
-              end: event.currentTarget.selectionEnd,
-            })
-          }
-          onKeyUp={(event) =>
-            setSelection({
-              start: event.currentTarget.selectionStart,
-              end: event.currentTarget.selectionEnd,
-            })
-          }
-          onBlur={(event) =>
-            setSelection({
-              start: event.currentTarget.selectionStart,
-              end: event.currentTarget.selectionEnd,
-            })
-          }
-          placeholder={placeholder}
-          rows={minRows}
-          className="input min-h-[18rem] w-full resize-y rounded-none border-0 bg-transparent font-mono text-sm focus:ring-0"
-        />
+        <div className="relative">
+          <textarea
+            ref={setTextarea}
+            name={name}
+            value={value}
+            onChange={(event) => {
+              setValue(event.target.value);
+              setSelection({
+                start: event.currentTarget.selectionStart,
+                end: event.currentTarget.selectionEnd,
+              });
+            }}
+            onSelect={(event) =>
+              setSelection({
+                start: event.currentTarget.selectionStart,
+                end: event.currentTarget.selectionEnd,
+              })
+            }
+            onKeyUp={(event) =>
+              setSelection({
+                start: event.currentTarget.selectionStart,
+                end: event.currentTarget.selectionEnd,
+              })
+            }
+            onBlur={(event) =>
+              setSelection({
+                start: event.currentTarget.selectionStart,
+                end: event.currentTarget.selectionEnd,
+              })
+            }
+            placeholder={placeholder}
+            rows={minRows}
+            className="input min-h-[18rem] w-full resize-y rounded-none border-0 bg-transparent font-mono text-sm focus:ring-0"
+          />
+          {mentionQuery !== null && (
+            <MentionDropdown users={mentionResults} loading={mentionLoading} onSelect={handleMentionSelect} onClose={() => {}} />
+          )}
+        </div>
       )}
     </div>
   );

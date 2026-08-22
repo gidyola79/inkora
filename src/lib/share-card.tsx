@@ -166,7 +166,7 @@ export function ShareCard({
         </div>
       )}
 
-      {/* Content — post starts on page 1 */}
+      {/* Content — post starts on page 1, otherwise keep original spacing */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: isCover ? "flex-start" : "center", marginTop: 24, gap: 14 }}>
         {isCover ? (
           <>
@@ -213,7 +213,11 @@ export function ShareCard({
                 {article.author.username && <span style={{ fontSize: 12, opacity: 0.6 }}>@{article.author.username}</span>}
               </div>
             </div>
-            {bodyText && <div style={{ marginTop: 12, fontSize: 18, lineHeight: 1.6, opacity: 0.9, display: "flex" }}>{bodyText}</div>}
+            {bodyText && (
+              <div style={{ marginTop: 16, fontSize: 18, lineHeight: 1.6, opacity: 0.9, display: "flex", borderTop: `1px solid ${base.border}`, paddingTop: 16 }}>
+                {bodyText}
+              </div>
+            )}
           </>
         ) : (
           <div style={{ fontSize: 22, lineHeight: 1.6, opacity: 0.9, display: "flex" }}>{bodyText}</div>
@@ -228,7 +232,7 @@ export function ShareCard({
           <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <span style={{ fontSize: 12, fontWeight: 600 }}>Read on Inkora</span>
             <span style={{ fontSize: 11, opacity: 0.6 }}>{host}/articles/{article.slug}</span>
-            <span style={{ fontSize: 10, opacity: 0.45 }}>{variant.label} · Share as image</span>
+            <span style={{ fontSize: 10, opacity: 0.45 }}>{variant.label}</span>
           </div>
         </div>
         <div

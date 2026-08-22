@@ -7,7 +7,7 @@ export function MobileMenu({ children }: { children: React.ReactNode }) {
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
+    function handleClickOutside(event: MouseEvent | TouchEvent) {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setOpen(false);
       }
@@ -17,6 +17,8 @@ export function MobileMenu({ children }: { children: React.ReactNode }) {
     }
     function handleMenuClick(event: MouseEvent) {
       const target = event.target as Element;
+      // Don't close when clicking the hamburger toggle itself — its own onClick handles toggle
+      if ((target as Element).closest('[aria-controls="mobile-menu"]')) return;
       if (
         menuRef.current &&
         menuRef.current.contains(target) &&
@@ -26,10 +28,12 @@ export function MobileMenu({ children }: { children: React.ReactNode }) {
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside as unknown as EventListener, { passive: true });
     document.addEventListener("keydown", handleKeyDown);
     document.addEventListener("click", handleMenuClick);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside as unknown as EventListener);
       document.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("click", handleMenuClick);
     };

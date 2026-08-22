@@ -27,6 +27,8 @@ export function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
+  const [resendStatus, setResendStatus] = useState<string | null>(null);
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -46,12 +48,39 @@ export function LoginForm() {
 
       const { error: signInError } = await signIn.email({ email, password });
       if (signInError) {
+        const msg = (signInError.message ?? "").toLowerCase();
+        const isUnverified = msg.includes("not verified") || msg.includes("verify") || msg.includes("verification") || (signInError as unknown as { code?: string }).code === "EMAIL_NOT_VERIFIED";
+        if (isUnverified) {
+          setUnverifiedEmail(email);
+          setError("Please verify your email — we sent you a link when you registered. Check your inbox (and spam).");
+          return;
+        }
         setError(signInError.message ?? "Incorrect username/email or password.");
         return;
       }
       router.push(next);
       router.refresh();
     });
+  }
+
+  async function handleResend() {
+    if (!unverifiedEmail) return;
+    setResendStatus(null);
+    try {
+      const { error } = await (signIn as unknown as { sendVerificationEmail?: (p: { email: string; callbackURL: string }) => Promise<{ error?: { message?: string } }> }).sendVerificationEmail?.({ email: unverifiedEmail, callbackURL: "/" }) ?? { error: { message: "Resend not available" } };
+      // fallback: hit Better Auth endpoint directly
+      if (error) {
+        const r = await fetch("/api/auth/send-verification-email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: unverifiedEmail, callbackURL: "/" }),
+        });
+        if (!r.ok) throw new Error((await r.json().catch(() => ({}))).message || "Couldn't resend");
+      }
+      setResendStatus("Verification link resent — check your inbox.");
+    } catch (e) {
+      setResendStatus(e instanceof Error ? e.message : "Couldn't resend verification email.");
+    }
   }
 
   async function resolveLoginIdentifier(identifier: string): Promise<string | null> {
@@ -69,25 +98,33 @@ export function LoginForm() {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
       {error && (
-        <p
+        <div
           role="alert"
-          className="flex items-start gap-2.5 rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger"
+          className="flex flex-col gap-2.5 rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger"
         >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            className="mt-0.5 h-4 w-4 shrink-0"
-            aria-hidden="true"
-          >
-            <circle cx="12" cy="12" r="10" />
-            <path d="M12 8v4" />
-            <path d="M12 16h.01" />
-          </svg>
-          <span>{error}</span>
-        </p>
+          <p className="flex items-start gap-2.5">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              className="mt-0.5 h-4 w-4 shrink-0"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 8v4" />
+              <path d="M12 16h.01" />
+            </svg>
+            <span>{error}</span>
+          </p>
+          {unverifiedEmail && (
+            <div className="flex flex-wrap items-center gap-2 pl-6">
+              <button type="button" onClick={handleResend} className="btn btn-outline btn-sm">Resend verification link</button>
+              {resendStatus && <span className="text-xs">{resendStatus}</span>}
+            </div>
+          )}
+        </div>
       )}
 
       <label className="flex flex-col gap-1.5">
