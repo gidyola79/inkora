@@ -64,14 +64,25 @@ export function chunkContent(article: ShareArticle, maxChars = 520, maxPages = 4
 }
 
 export function chunkContentForPages(article: ShareArticle, desiredTotal: number): { pages: string[]; total: number } {
-  const total = Math.max(1, Math.min(4, desiredTotal));
-  if (total === 1) return { pages: [], total: 1 };
-  const bodyPages = total - 1;
+  const total = Math.max(1, Math.min(4, desiredTotal || 2));
   const plain = stripMarkdown(article.content);
   if (!plain) return { pages: [], total: 1 };
-  const perPage = Math.ceil(plain.length / bodyPages);
+  const perPage = Math.ceil(plain.length / total);
   const maxChars = Math.max(220, Math.min(700, perPage + 30));
-  return chunkContent(article, maxChars, bodyPages);
+  const chunks: string[] = [];
+  let rest = plain;
+  while (rest.length > 0 && chunks.length < total) {
+    if (rest.length <= maxChars) {
+      chunks.push(rest);
+      break;
+    }
+    let cut = rest.lastIndexOf(" ", maxChars);
+    if (cut < maxChars * 0.6) cut = maxChars;
+    chunks.push(rest.slice(0, cut).trim());
+    rest = rest.slice(cut).trim();
+  }
+  if (chunks.length === total && rest.length > 0) chunks[chunks.length - 1] += " …";
+  return { pages: chunks, total: chunks.length };
 }
 
 export async function makeQrDataUrl(url: string): Promise<string> {
@@ -102,7 +113,7 @@ export function ShareCard({
   const isCover = page === 1;
   const host = appUrl.replace(/^https?:\/\//, "");
   const bodyPages = chunkContentForPages(article, totalPages).pages;
-  const bodyText = !isCover ? bodyPages[page - 2] ?? "" : "";
+  const bodyText = bodyPages[page - 1] ?? "";
 
   return (
     <div
@@ -155,7 +166,7 @@ export function ShareCard({
         </div>
       )}
 
-      {/* Content */}
+      {/* Content — post starts on page 1 */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: isCover ? "flex-start" : "center", marginTop: 24, gap: 14 }}>
         {isCover ? (
           <>
@@ -202,6 +213,7 @@ export function ShareCard({
                 {article.author.username && <span style={{ fontSize: 12, opacity: 0.6 }}>@{article.author.username}</span>}
               </div>
             </div>
+            {bodyText && <div style={{ marginTop: 12, fontSize: 18, lineHeight: 1.6, opacity: 0.9, display: "flex" }}>{bodyText}</div>}
           </>
         ) : (
           <div style={{ fontSize: 22, lineHeight: 1.6, opacity: 0.9, display: "flex" }}>{bodyText}</div>

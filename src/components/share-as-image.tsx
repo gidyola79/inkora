@@ -108,7 +108,7 @@ export function ShareAsImage({ articleId, title }: { articleId: string; title: s
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-2 sm:p-4" onClick={() => setOpen(false)}>
           <div ref={dialogRef} onClick={(e) => e.stopPropagation()} className="flex max-h-[92dvh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-card shadow-xl sm:max-h-[90dvh]">
             <div className="flex items-center justify-between border-b border-border px-4 py-3">
-              <h3 className="text-sm font-semibold">Share as image — preview before download</h3>
+              <h3 className="text-sm font-semibold">Share as image</h3>
               <button onClick={() => setOpen(false)} className="btn btn-ghost btn-sm" aria-label="Close">✕</button>
             </div>
 
@@ -143,7 +143,7 @@ export function ShareAsImage({ articleId, title }: { articleId: string; title: s
               <div className="flex w-full flex-col gap-4 overflow-y-auto lg:w-80">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wider text-muted">Sections</p>
-                  <p className="mt-1 text-xs text-muted">Break the post into 1–4 images. Page 1 is always the cover with your profile.</p>
+                  <p className="mt-1 text-xs text-muted">Break the post into 1–4 images. Post starts on page 1.</p>
                   <div className="mt-2 flex items-center gap-2">
                     {[1, 2, 3, 4].map((n) => (
                       <button key={n} onClick={() => { setPages(n); setPage(1); }} className={"flex-1 rounded-xl border px-2 py-2 text-sm font-medium " + (pages === n ? "border-accent bg-accent text-accent-foreground" : "border-border hover:bg-border/40")}>{n}</button>
@@ -187,7 +187,7 @@ export function ShareAsImage({ articleId, title }: { articleId: string; title: s
                   <button onClick={handleShare} className="btn btn-primary btn-sm">Share</button>
                   <button onClick={handleCopy} className="btn btn-ghost btn-sm">Copy image</button>
                 </div>
-                <p className="text-xs leading-relaxed text-muted">Preview is live — download only after you like the look. Branded with Inkora wordmark, author avatar/name, title & excerpt (cover) + paginated body + QR linking to the post.</p>
+                <p className="text-xs leading-relaxed text-muted">Branded with Inkora wordmark, author avatar/name, title & excerpt + paginated body + QR linking to the post.</p>
               </div>
             </div>
           </div>
