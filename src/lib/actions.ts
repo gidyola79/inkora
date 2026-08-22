@@ -395,6 +395,7 @@ export async function updateProfileAction(
   const dob = String(formData.get("dob") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim();
   const gender = String(formData.get("gender") ?? "").trim();
+  const website = String(formData.get("website") ?? "").trim();
 
   if (!/^[a-z0-9_]{3,30}$/.test(username)) {
     return {
@@ -407,6 +408,14 @@ export async function updateProfileAction(
   }
   if (phone && !/^[0-9+\-\s()]{7,20}$/.test(phone)) {
     return { success: false, message: "Phone number doesn't look valid." };
+  }
+  if (website) {
+    try {
+      const u = new URL(website);
+      if (!["http:", "https:"].includes(u.protocol)) throw new Error("bad protocol");
+    } catch {
+      return { success: false, message: "Website must be a valid http(s) URL (e.g. https://example.com)." };
+    }
   }
 
   const existing = await prisma.user.findUnique({ where: { username } });
@@ -425,6 +434,7 @@ export async function updateProfileAction(
       dob: parsedDob,
       phone: phone || null,
       gender: gender || null,
+      website: website || null,
     },
   });
 

@@ -107,6 +107,9 @@ export async function Navbar() {
 
         {!user && (
           <div className="hidden items-center gap-1 md:flex">
+            <Link href="/login?next=/messages" aria-label="Messages" title="Messages — sign in to chat" className="btn btn-ghost relative">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5" aria-hidden="true"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" /></svg>
+            </Link>
             <Link href="/login" className="btn btn-ghost">
               Sign in
             </Link>
@@ -121,7 +124,7 @@ export async function Navbar() {
             <ThemeToggle />
           </div>
           <NavLinks user={Boolean(user)} mobile />
-          {user && (
+          {user ? (
             <>
               <Link
                 href="/dashboard/activity"
@@ -148,6 +151,13 @@ export async function Navbar() {
               </Link>
               <LogoutButton mobile />
             </>
+          ) : (
+            <Link
+              href="/login?next=/messages"
+              className="flex w-full items-center justify-start rounded-xl px-3 py-2.5 text-sm font-medium text-muted transition-colors hover:bg-border/40 hover:text-foreground"
+            >
+              Messages — sign in to chat
+            </Link>
           )}
         </MobileMenu>
       </nav>

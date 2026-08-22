@@ -12,6 +12,7 @@ import { requireUserOrNull } from "@/lib/auth-helpers";
 import { FollowButton } from "@/components/follow-button";
 import { MessageUserButton } from "@/components/message-user-button";
 import { ArticleCard } from "@/components/article-card";
+import { BackButton } from "@/components/back-button";
 
 export async function generateMetadata({
   params,
@@ -51,6 +52,9 @@ export default async function ProfilePage({
 
   return (
     <section className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6 sm:py-14">
+      <div className="mb-4">
+        <BackButton fallbackHref="/explore" label="Back" />
+      </div>
       <div className="card overflow-hidden">
         <div className="h-28 bg-gradient-to-br from-accent/40 via-accent/15 to-card" aria-hidden="true" />
         <div className="flex flex-col gap-4 px-6 pb-6 sm:flex-row sm:items-end sm:justify-between">
@@ -76,6 +80,12 @@ export default async function ProfilePage({
                 <p className="mt-1.5 max-w-md text-sm leading-relaxed text-foreground">
                   {user.bio}
                 </p>
+              )}
+              {user.website && (
+                <a href={user.website} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1 text-sm text-accent underline-offset-4 hover:underline">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
+                  {user.website.replace(/^https?:\/\//, "")}
+                </a>
               )}
             </div>
           </div>

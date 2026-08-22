@@ -25,6 +25,7 @@ export default async function ProfileSettingsPage() {
       gender: true,
       publicKey: true,
       showOnlineStatus: true,
+      website: true,
     },
   });
 
@@ -62,6 +63,7 @@ export default async function ProfileSettingsPage() {
           }
           phone={user.phone ?? ""}
           gender={user.gender ?? ""}
+          website={user.website ?? ""}
         />
       </div>
 

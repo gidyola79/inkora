@@ -273,7 +273,7 @@ export async function getExploreUsers(search?: string) {
     include: {
       _count: { select: { articles: { where: { status: "PUBLISHED" } }, followers: true } },
     },
-    orderBy: { createdAt: "asc" },
+    orderBy: { name: "asc" },
     take: 60,
   });
 }

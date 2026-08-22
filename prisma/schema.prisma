@@ -33,6 +33,7 @@ model User {
   phone                String?
   gender               String?
    publicKey            String?
+   website              String?
    notificationsEnabled Boolean   @default(true)
    showOnlineStatus     Boolean   @default(true)
    lastSeenAt           DateTime?

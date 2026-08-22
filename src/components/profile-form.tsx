@@ -12,6 +12,7 @@ type ProfileFormProps = {
   dob: string;
   phone: string;
   gender: string;
+  website: string;
 };
 
 const initialState: { success: boolean; message?: string } = { success: false };
@@ -24,6 +25,7 @@ export function ProfileForm({
   dob,
   phone,
   gender,
+  website,
 }: ProfileFormProps) {
   const [state, formAction, isPending] = useActionState(updateProfileAction, initialState);
   const [avatar, setAvatar] = useState(image);
@@ -178,6 +180,21 @@ export function ProfileForm({
             <option value="nonbinary">Non-binary</option>
             <option value="other">Other</option>
           </select>
+        </div>
+
+        <div className="flex flex-col gap-2 sm:col-span-2">
+          <label htmlFor="website" className="label">
+            Website <span className="font-normal text-muted">(optional)</span>
+          </label>
+          <input
+            id="website"
+            name="website"
+            type="url"
+            defaultValue={website}
+            placeholder="https://your-site.com"
+            className="input"
+          />
+          <p className="text-xs text-muted">Your personal site or portfolio. Shown on your public profile.</p>
         </div>
       </div>
 
