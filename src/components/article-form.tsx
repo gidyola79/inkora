@@ -60,6 +60,7 @@ export function ArticleForm({
 
     const body = new FormData();
     body.append("file", file);
+    body.append("kind", "cover");
 
     setUploading(true);
     setUploadError(null);

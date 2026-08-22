@@ -45,6 +45,7 @@ export function ProfileForm({
 
     const body = new FormData();
     body.append("file", file);
+    body.append("kind", "avatar");
     setUploading(true);
     setUploadError(null);
     try {
