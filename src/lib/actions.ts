@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { auth } from "@/lib/auth";
 import { requireUser } from "@/lib/auth-helpers";
 import { prisma } from "@/lib/prisma";
 import { generateUniqueSlug } from "@/lib/slug";
@@ -697,4 +698,38 @@ export async function markMessagesReadAction(formData: FormData): Promise<void> 
   });
   revalidatePath(`/messages/${conversationId}`);
   revalidatePath("/messages");
+}
+
+export async function deleteAccountAction(
+  _prevState: { success: boolean; message?: string },
+  formData: FormData
+) {
+  const session = await requireUser();
+
+  const password = String(formData.get("password") ?? "");
+  const confirmed = formData.get("confirm") === "on";
+
+  if (!confirmed) {
+    return { success: false, message: "Please confirm you understand this is permanent." };
+  }
+  if (!password) {
+    return { success: false, message: "Enter your password to authorize deletion." };
+  }
+
+  try {
+    await auth.api.signInEmail({ body: { email: session.user.email, password } });
+  } catch {
+    return { success: false, message: "Incorrect password." };
+  }
+
+  try {
+    await prisma.user.delete({
+      where: { id: session.user.id },
+    });
+  } catch (error) {
+    console.error("Account deletion failed:", error);
+    return { success: false, message: "Could not delete your account. Please try again." };
+  }
+
+  return { success: true, message: "Account deleted." };
 }

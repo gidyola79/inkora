@@ -3,6 +3,8 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth-helpers";
 import { prisma } from "@/lib/prisma";
 import { ProfileForm } from "@/components/profile-form";
+import { PasswordForm } from "@/components/password-form";
+import { DangerZone } from "@/components/danger-zone";
 import { E2eeSetup } from "@/components/e2ee-setup";
 
 export const metadata: Metadata = { title: "Profile settings" };
@@ -60,8 +62,16 @@ export default async function ProfileSettingsPage() {
         />
       </div>
 
+      <div className="card mt-6 p-6">
+        <PasswordForm />
+      </div>
+
       <div className="mt-6">
         <E2eeSetup hasPublicKey={Boolean(user.publicKey)} />
+      </div>
+
+      <div className="card mt-6 border-danger/40 p-6">
+        <DangerZone />
       </div>
     </section>
   );

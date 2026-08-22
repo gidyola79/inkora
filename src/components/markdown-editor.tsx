@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { MarkdownRenderer } from "@/components/markdown";
+import { EmojiPicker } from "@/components/emoji-picker";
 
 type ToolButton = {
   label: string;
@@ -55,6 +56,19 @@ export function MarkdownEditor({
         start + prefix.length,
         start + prefix.length + selected.length
       );
+    });
+  }
+
+  function insertText(text: string) {
+    const start = selection.start;
+    const end = selection.end;
+    const next = value.slice(0, start) + text + value.slice(end);
+    setValue(next);
+    setSelection({ start: start + text.length, end: start + text.length });
+    requestAnimationFrame(() => {
+      if (!textarea) return;
+      textarea.focus();
+      textarea.setSelectionRange(start + text.length, start + text.length);
     });
   }
 
@@ -171,6 +185,8 @@ export function MarkdownEditor({
         {buttons.map((button) => (
           <ToolbarButton key={button.label} title={button.title} icon={button.icon} onSelect={button.onSelect} />
         ))}
+        <span className="mx-1 h-5 w-px bg-border" aria-hidden="true" />
+        <EmojiPicker title="Insert emoji" onPick={insertText} />
         <span className="mx-1 h-5 w-px bg-border" aria-hidden="true" />
         <button
           type="button"

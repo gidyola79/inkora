@@ -118,18 +118,31 @@ Not everyone is nice. Learn to read the *useful* noise and ignore the rest.
 
 > Show your work, but protect your energy.`;
 
+// Yesterday's date according to the machine running the seed (i.e., YOUR
+// calendar), rendered as an ISO timestamp Postgres stores as-is. Mid-day
+// hours keep it on yesterday's calendar date for viewers in nearby zones.
+function yesterdayAt(hours) {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const hh = String(hours).padStart(2, "0");
+  return `${y}-${m}-${day}T${hh}:00:00`;
+}
+
 await q(
   `INSERT INTO "Article" (id, "authorId", title, slug, content, excerpt, status, "createdAt", "updatedAt", "publishedAt")
-   VALUES ($1, $2, $3, $4, $5, $6, 'PUBLISHED', now() - interval '7 days', now() - interval '7 days', now() - interval '7 days')`,
+   VALUES ($1, $2, $3, $4, $5, $6, 'PUBLISHED', $7::timestamptz, $7::timestamptz, $7::timestamptz)`,
   [art1, writer.id, "The Quiet Art of Finishing", "the-quiet-art-of-finishing", content1,
-   "Why the discipline of closing the loop beats starting new things."]
+   "Why the discipline of closing the loop beats starting new things.", yesterdayAt(10)]
 );
 
 await q(
   `INSERT INTO "Article" (id, "authorId", title, slug, content, excerpt, status, "createdAt", "updatedAt", "publishedAt")
-   VALUES ($1, $2, $3, $4, $5, $6, 'PUBLISHED', now() - interval '2 days', now() - interval '2 days', now() - interval '2 days')`,
+   VALUES ($1, $2, $3, $4, $5, $6, 'PUBLISHED', $7::timestamptz, $7::timestamptz, $7::timestamptz)`,
   [art2, writer.id, "Notes on Building in Public", "notes-on-building-in-public", content2,
-   "Sharing your process is a superpower disguised as a habit."]
+   "Sharing your process is a superpower disguised as a habit.", yesterdayAt(15)]
 );
 
 await q(

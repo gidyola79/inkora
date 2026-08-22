@@ -23,7 +23,7 @@ async function generateUsername(email: string): Promise<string> {
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
-    provider: "sqlite",
+    provider: "postgresql",
   }),
   emailAndPassword: {
     enabled: true,
