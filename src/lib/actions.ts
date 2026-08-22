@@ -253,6 +253,7 @@ export async function addCommentAction(formData: FormData): Promise<void> {
     type: "COMMENT",
     articleId: article.id,
     commentId: comment.id,
+    message: content,
   });
 
   revalidatePath(`/articles/${article.slug}`);
@@ -700,11 +701,49 @@ export async function markMessagesReadAction(formData: FormData): Promise<void> 
   revalidatePath("/messages");
 }
 
-export async function deleteAccountAction(
+export async function changeEmailAction(
   _prevState: { success: boolean; message?: string },
   formData: FormData
 ) {
   const session = await requireUser();
+
+  const newEmail = String(formData.get("newEmail") ?? "").trim().toLowerCase();
+  const password = String(formData.get("password") ?? "");
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
+    return { success: false, message: "Enter a valid email address." };
+  }
+  if (newEmail === session.user.email.toLowerCase()) {
+    return { success: false, message: "That is already your email." };
+  }
+
+  const existing = await prisma.user.findUnique({ where: { email: newEmail } });
+  if (existing) {
+    return { success: false, message: "That email is already in use by another account." };
+  }
+
+  try {
+    await auth.api.signInEmail({ body: { email: session.user.email, password } });
+  } catch {
+    return { success: false, message: "Incorrect password." };
+  }
+
+  await prisma.user.update({
+    where: { id: session.user.id },
+    data: { email: newEmail },
+  });
+
+  revalidatePath("/dashboard/profile");
+  return {
+    success: true,
+    message: `Email updated. Use ${newEmail} the next time you sign in.`,
+  };
+}
+
+export async function deleteAccountAction(
+  _prevState: { success: boolean; message?: string },
+  formData: FormData
+) {  const session = await requireUser();
 
   const password = String(formData.get("password") ?? "");
   const confirmed = formData.get("confirm") === "on";

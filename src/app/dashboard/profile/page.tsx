@@ -3,6 +3,7 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth-helpers";
 import { prisma } from "@/lib/prisma";
 import { ProfileForm } from "@/components/profile-form";
+import { EmailForm } from "@/components/email-form";
 import { PasswordForm } from "@/components/password-form";
 import { DangerZone } from "@/components/danger-zone";
 import { E2eeSetup } from "@/components/e2ee-setup";
@@ -60,6 +61,10 @@ export default async function ProfileSettingsPage() {
           phone={user.phone ?? ""}
           gender={user.gender ?? ""}
         />
+      </div>
+
+      <div className="card mt-6 p-6">
+        <EmailForm currentEmail={session.user.email} />
       </div>
 
       <div className="card mt-6 p-6">

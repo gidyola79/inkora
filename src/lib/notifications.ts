@@ -7,6 +7,7 @@ type CreateNotificationParams = {
   type: NotificationType;
   articleId?: string;
   commentId?: string;
+  message?: string;
 };
 
 export async function createNotification({
@@ -15,6 +16,7 @@ export async function createNotification({
   type,
   articleId,
   commentId,
+  message,
 }: CreateNotificationParams) {
   if (actorId && actorId === userId) return;
 
@@ -31,6 +33,7 @@ export async function createNotification({
       type,
       articleId: articleId ?? null,
       commentId: commentId ?? null,
+      message: message ?? null,
     },
   });
 }

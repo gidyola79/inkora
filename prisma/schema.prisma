@@ -204,6 +204,7 @@ model Notification {
   type      NotificationType
   articleId String?
   commentId String?
+  message   String?
   readAt    DateTime?
   createdAt DateTime         @default(now())
 

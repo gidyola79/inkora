@@ -47,6 +47,7 @@ export async function POST(request: Request) {
     type: "COMMENT",
     articleId: article.id,
     commentId: comment.id,
+    message: content,
   });
 
   revalidatePath(`/articles/${article.slug}`);

@@ -172,18 +172,19 @@ await q('INSERT INTO "Comment" (id, "articleId", "authorId", content, "createdAt
 // Notifications for writer
 await q('INSERT INTO "Notification" (id, "userId", "actorId", type, "articleId", "readAt", "createdAt") VALUES ($1, $2, $3, \'FOLLOW\', NULL, NULL, now())',
   [randomUUID(), writer.id, reader.id]);
-await q('INSERT INTO "Notification" (id, "userId", "actorId", type, "articleId", "readAt", "createdAt") VALUES ($1, $2, $3, \'LIKE\', $4, NULL, now())',
-  [randomUUID(), writer.id, reader.id, art1]);
+await q('INSERT INTO "Notification" (id, "userId", "actorId", type, "articleId", "message", "readAt", "createdAt") VALUES ($1, $2, $3, \'LIKE\', $4, $5, NULL, now())',
+  [randomUUID(), writer.id, reader.id, art1, 'Liked "The Quiet Art of Finishing"']);
 await q('INSERT INTO "Notification" (id, "userId", "actorId", type, "articleId", "readAt", "createdAt") VALUES ($1, $2, $3, \'REPOST\', $4, NULL, now())',
   [randomUUID(), writer.id, reader.id, art1]);
-await q('INSERT INTO "Notification" (id, "userId", "actorId", type, "articleId", "commentId", "readAt", "createdAt") VALUES ($1, $2, $3, \'COMMENT\', $4, $5, NULL, now())',
-  [randomUUID(), writer.id, reader.id, art1, commentId]);
+await q('INSERT INTO "Notification" (id, "userId", "actorId", type, "articleId", "commentId", "message", "readAt", "createdAt") VALUES ($1, $2, $3, \'COMMENT\', $4, $5, $6, NULL, now())',
+  [randomUUID(), writer.id, reader.id, art1, commentId,
+   "The section on subscripts is the best part. H~2~O forever!"]);
 
 // Announcements for both
-await q('INSERT INTO "Notification" (id, "userId", "actorId", type, "articleId", "readAt", "createdAt") VALUES ($1, $2, NULL, \'ANNOUNCEMENT\', NULL, NULL, now())',
-  [randomUUID(), writer.id]);
-await q('INSERT INTO "Notification" (id, "userId", "actorId", type, "articleId", "readAt", "createdAt") VALUES ($1, $2, NULL, \'ANNOUNCEMENT\', NULL, NULL, now())',
-  [randomUUID(), reader.id]);
+await q('INSERT INTO "Notification" (id, "userId", "actorId", type, "message", "readAt", "createdAt") VALUES ($1, $2, NULL, \'ANNOUNCEMENT\', $3, NULL, now())',
+  [randomUUID(), writer.id, "Welcome to Inkora! Quote-a-blog, mentions, and flashcards are live. More to come."]);
+await q('INSERT INTO "Notification" (id, "userId", "actorId", type, "message", "readAt", "createdAt") VALUES ($1, $2, NULL, \'ANNOUNCEMENT\', $3, NULL, now())',
+  [randomUUID(), reader.id, "Welcome to Inkora! Follow writers to build your feed and try flashcards on any article."]);
 
 // Flashcard set for article 1 by writer
 const setId = randomUUID();

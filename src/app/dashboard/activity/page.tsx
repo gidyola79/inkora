@@ -125,6 +125,11 @@ export default async function ActivityPage() {
                       </Link>
                     )}
                   </p>
+                  {notification.message && (
+                    <p className="mt-2 whitespace-pre-wrap break-words rounded-xl border border-border bg-background/70 px-3 py-2 text-sm leading-relaxed text-muted">
+                      {notification.message}
+                    </p>
+                  )}
                   <p className="mt-0.5 text-xs text-muted">
                     {formatDate(notification.createdAt)}
                   </p>
