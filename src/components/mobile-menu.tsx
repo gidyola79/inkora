@@ -15,11 +15,23 @@ export function MobileMenu({ children }: { children: React.ReactNode }) {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") setOpen(false);
     }
+    function handleMenuClick(event: MouseEvent) {
+      const target = event.target as Element;
+      if (
+        menuRef.current &&
+        menuRef.current.contains(target) &&
+        (target instanceof HTMLAnchorElement || target instanceof HTMLButtonElement || target.closest("a, button"))
+      ) {
+        setOpen(false);
+      }
+    }
     document.addEventListener("mousedown", handleClickOutside);
     document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("click", handleMenuClick);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("click", handleMenuClick);
     };
   }, []);
 

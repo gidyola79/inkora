@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth-helpers";
 import { getConversationForUser } from "@/lib/data";
 import { ChatWindow } from "@/components/chat-window";
-import { markMessagesReadAction } from "@/lib/actions";
+import { markMessagesReadSilent } from "@/lib/actions";
 
 export async function generateMetadata(): Promise<Metadata> {
   return { title: "Conversation" };
@@ -21,9 +21,7 @@ export default async function ConversationPage({
   const conversation = await getConversationForUser(conversationId, session.user.id);
   if (!conversation || !conversation.other) notFound();
 
-  const formData = new FormData();
-  formData.set("conversationId", conversationId);
-  await markMessagesReadAction(formData);
+  await markMessagesReadSilent(conversationId, session.user.id);
 
   return (
     <section className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 sm:py-10">

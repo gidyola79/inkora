@@ -824,6 +824,17 @@ export async function markMessagesReadAction(formData: FormData): Promise<void> 
   revalidatePath("/messages");
 }
 
+export async function markMessagesReadSilent(conversationId: string, userId: string): Promise<void> {
+  await prisma.message.updateMany({
+    where: {
+      conversationId,
+      senderId: { not: userId },
+      readAt: null,
+    },
+    data: { readAt: new Date() },
+  });
+}
+
 export async function changeEmailAction(
   _prevState: { success: boolean; message?: string },
   formData: FormData
