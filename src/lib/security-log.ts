@@ -5,7 +5,8 @@ type SecurityEvent =
   | "upload.rejected"
   | "account.deleted"
   | "email.changed"
-  | "password.reset_requested";
+  | "password.reset_requested"
+  | "notification.reported";
 
 /**
  * Structured security log lines. Rendered as single-line JSON so Vercel's

@@ -50,6 +50,9 @@ model User {
   actedOn           Notification[]      @relation("NotificationActor")
   conversations     ConversationParticipant[]
   messages          Message[]
+  mutedBy           MutedUser[]            @relation("MutedBy")
+  mutedUsers        MutedUser[]            @relation("MutedUser")
+  reportedNotifs    NotificationReport[]
 }
 
 model Session {
@@ -211,6 +214,7 @@ model Notification {
   user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   actor   User?    @relation("NotificationActor", fields: [actorId], references: [id], onDelete: Cascade)
   article Article? @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  reports NotificationReport[]
 
   @@index([userId, readAt, createdAt])
   @@index([actorId])
@@ -264,4 +268,34 @@ model RateLimit {
   key         String @unique
   count       Int
   lastRequest Float
+}
+
+model MutedUser {
+  id         String   @id @default(cuid())
+  userId     String
+  mutedId    String
+  createdAt  DateTime @default(now())
+
+  mutedBy User @relation("MutedBy", fields: [userId], references: [id], onDelete: Cascade)
+  muted   User @relation("MutedUser", fields: [mutedId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, mutedId])
+  @@index([userId])
+  @@index([mutedId])
+}
+
+model NotificationReport {
+  id             String   @id @default(cuid())
+  notificationId String
+  reporterId     String
+  reason         String   @default("spam")
+  message        String?
+  createdAt      DateTime @default(now())
+
+  notification Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  reporter     User         @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@unique([notificationId, reporterId])
+  @@index([notificationId])
+  @@index([reporterId])
 }

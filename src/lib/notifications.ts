@@ -26,6 +26,13 @@ export async function createNotification({
   });
   if (!recipient || !recipient.notificationsEnabled) return;
 
+  if (actorId) {
+    const muted = await prisma.mutedUser.findUnique({
+      where: { userId_mutedId: { userId, mutedId: actorId } },
+    });
+    if (muted) return;
+  }
+
   await prisma.notification.create({
     data: {
       userId,
@@ -36,4 +43,12 @@ export async function createNotification({
       message: message ?? null,
     },
   });
+}
+
+export async function getMutedUserIds(userId: string): Promise<Set<string>> {
+  const rows = await prisma.mutedUser.findMany({
+    where: { userId },
+    select: { mutedId: true },
+  });
+  return new Set(rows.map((r) => r.mutedId));
 }

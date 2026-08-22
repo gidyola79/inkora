@@ -462,6 +462,74 @@ export async function markNotificationsReadAction(): Promise<void> {
   revalidatePath("/dashboard/activity");
 }
 
+export async function markNotificationReadAction(notificationId: string): Promise<void> {
+  const session = await requireUser();
+  await prisma.notification.updateMany({
+    where: { id: notificationId, userId: session.user.id, readAt: null },
+    data: { readAt: new Date() },
+  });
+  revalidatePath("/dashboard/activity");
+}
+
+export async function deleteNotificationAction(notificationId: string): Promise<void> {
+  const session = await requireUser();
+  await prisma.notification.deleteMany({
+    where: { id: notificationId, userId: session.user.id },
+  });
+  revalidatePath("/dashboard/activity");
+}
+
+export async function muteUserAction(targetUserId: string): Promise<void> {
+  const session = await requireUser();
+  if (session.user.id === targetUserId) return;
+  await prisma.mutedUser.upsert({
+    where: { userId_mutedId: { userId: session.user.id, mutedId: targetUserId } },
+    create: { userId: session.user.id, mutedId: targetUserId },
+    update: {},
+  });
+  revalidatePath("/dashboard/activity");
+}
+
+export async function unmuteUserAction(targetUserId: string): Promise<void> {
+  const session = await requireUser();
+  await prisma.mutedUser.deleteMany({
+    where: { userId: session.user.id, mutedId: targetUserId },
+  });
+  revalidatePath("/dashboard/activity");
+}
+
+export async function reportNotificationAction(
+  notificationId: string,
+  reason: string,
+  message?: string
+): Promise<{ success: boolean }> {
+  const session = await requireUser();
+  const existing = await prisma.notificationReport.findUnique({
+    where: { notificationId_reporterId: { notificationId, reporterId: session.user.id } },
+  });
+  if (existing) return { success: false };
+  await prisma.notificationReport.create({
+    data: {
+      notificationId,
+      reporterId: session.user.id,
+      reason: reason || "spam",
+      message: message || null,
+    },
+  });
+  logSecurityEvent("notification.reported", { notificationId, reason, userId: session.user.id });
+  return { success: true };
+}
+
+export async function cleanupReadNotificationsAction(): Promise<number> {
+  const session = await requireUser();
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const { count } = await prisma.notification.deleteMany({
+    where: { userId: session.user.id, readAt: { not: null, lt: sevenDaysAgo } },
+  });
+  if (count > 0) revalidatePath("/dashboard/activity");
+  return count;
+}
+
 export type FlashcardActionState = { success: boolean; message?: string };
 
 export async function createFlashcardSetAction(
