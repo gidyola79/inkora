@@ -4,6 +4,8 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { signUp } from "@/lib/auth-client";
+import { optInToNewsletterAction } from "@/lib/actions";
+import { PASSWORD_RULES } from "@/lib/password-rules";
 
 function Spinner() {
   return (
@@ -19,93 +21,40 @@ function Spinner() {
   );
 }
 
-function PasswordField({
-  name,
-  label,
-  placeholder,
-  autoComplete,
-  minLength,
-}: {
-  name: string;
-  label: string;
-  placeholder: string;
-  autoComplete: "new-password";
-  minLength?: number;
-}) {
-  const [show, setShow] = useState(false);
+function RequirementRow({ met, label }: { met: boolean; label: string }) {
   return (
-    <label className="flex flex-col gap-1.5">
-      <span className="label">{label}</span>
-      <div className="relative">
+    <li className="flex items-center gap-2">
+      {met ? (
         <svg
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          strokeWidth="2"
+          strokeWidth="2.5"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
+          className="h-3.5 w-3.5 text-accent"
           aria-hidden="true"
         >
-          <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
-          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+          <path d="M20 6 9 17l-5-5" />
         </svg>
-        <input
-          type={show ? "text" : "password"}
-          name={name}
-          required
-          minLength={minLength}
-          autoComplete={autoComplete}
-          placeholder={placeholder}
-          className="glass-input pl-10 pr-11"
-        />
-        <button
-          type="button"
-          onClick={() => setShow((value) => !value)}
-          aria-label={show ? "Hide password" : "Show password"}
-          className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-muted transition-colors hover:bg-border/50 hover:text-foreground"
-        >
-          {show ? (
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-4 w-4"
-              aria-hidden="true"
-            >
-              <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 10 8 10 8a13.16 13.16 0 0 1-1.67 2.68" />
-              <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 8 10 8a9.74 9.74 0 0 0 5.39-1.61" />
-              <path d="M2 2l20 20" />
-              <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" />
-            </svg>
-          ) : (
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-4 w-4"
-              aria-hidden="true"
-            >
-              <path d="M2 12s3-8 10-8 10 8 10 8-3 8-10 8-10-8-10-8Z" />
-              <circle cx="12" cy="12" r="3" />
-            </svg>
-          )}
-        </button>
-      </div>
-    </label>
+      ) : (
+        <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full border border-muted/60" aria-hidden="true" />
+      )}
+      <span className={met ? "text-accent" : undefined}>{label}</span>
+    </li>
   );
 }
 
 export function RegisterForm() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  const [password, setPassword] = useState("");
+  const [termsAgreed, setTermsAgreed] = useState(false);
+  const [newsletterOptIn, setNewsletterOptIn] = useState(false);
   const [isPending, startTransition] = useTransition();
+
+  const metCount = PASSWORD_RULES.filter((rule) => rule.test(password)).length;
+  const allRulesMet = metCount === PASSWORD_RULES.length;
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -113,19 +62,24 @@ export function RegisterForm() {
 
     const name = String(formData.get("name") ?? "");
     const email = String(formData.get("email") ?? "");
-    const password = String(formData.get("password") ?? "");
     const confirmPassword = String(formData.get("confirmPassword") ?? "");
 
     if (name.trim().length < 2) {
       setError("Please enter your name.");
       return;
     }
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters.");
+    if (!allRulesMet) {
+      setError(
+        "Password must be at least 8 characters and include a letter, a number, and a special character."
+      );
       return;
     }
     if (password !== confirmPassword) {
       setError("Passwords do not match.");
+      return;
+    }
+    if (!termsAgreed) {
+      setError("Please agree to the Terms of Service and Privacy Policy to continue.");
       return;
     }
 
@@ -135,6 +89,13 @@ export function RegisterForm() {
       if (error) {
         setError(error.message ?? "Something went wrong. Please try again.");
         return;
+      }
+      if (newsletterOptIn) {
+        try {
+          await optInToNewsletterAction(email);
+        } catch {
+          // Newsletter opt-in is best-effort; never block registration on it.
+        }
       }
       router.push("/dashboard");
       router.refresh();
@@ -219,20 +180,130 @@ export function RegisterForm() {
         </div>
       </label>
 
-      <PasswordField
-        name="password"
-        label="Password"
-        placeholder="At least 8 characters"
-        autoComplete="new-password"
-        minLength={8}
-      />
+      <label className="flex flex-col gap-1.5">
+        <span className="label">Password</span>
+        <div className="relative">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
+            aria-hidden="true"
+          >
+            <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+          </svg>
+          <input
+            type="password"
+            name="password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            required
+            autoComplete="new-password"
+            placeholder="Create a strong password"
+            className="glass-input pl-10"
+            aria-describedby="password-rules"
+          />
+        </div>
+      </label>
 
-      <PasswordField
-        name="confirmPassword"
-        label="Confirm password"
-        placeholder="Repeat your password"
-        autoComplete="new-password"
-      />
+      <div id="password-rules" className="rounded-xl border border-border bg-background/50 p-4" hidden={password.length === 0}>
+        <div className="mb-3 flex items-center justify-between text-xs text-muted">
+          <span>Password strength</span>
+          <span>{metCount}/{PASSWORD_RULES.length}</span>
+        </div>
+        <div className="h-1.5 overflow-hidden rounded-full bg-border/70" role="progressbar" aria-valuenow={metCount} aria-valuemin={0} aria-valuemax={PASSWORD_RULES.length}>
+          <div
+            className={`h-full rounded-full transition-all duration-300 ${allRulesMet ? "bg-accent" : "bg-muted-foreground/50"}`}
+            style={{ width: `${(metCount / PASSWORD_RULES.length) * 100}%` }}
+          />
+        </div>
+        <ul className="mt-3 grid grid-cols-1 gap-1.5 text-xs text-muted sm:grid-cols-2">
+          {PASSWORD_RULES.map((rule) => (
+            <RequirementRow key={rule.label} met={rule.test(password)} label={rule.label} />
+          ))}
+        </ul>
+      </div>
+
+      <label className="flex flex-col gap-1.5">
+        <span className="label">Confirm password</span>
+        <div className="relative">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
+            aria-hidden="true"
+          >
+            <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+          </svg>
+          <input
+            type="password"
+            name="confirmPassword"
+            required
+            autoComplete="new-password"
+            placeholder="Repeat your password"
+            className="glass-input pl-10"
+          />
+        </div>
+      </label>
+
+      <div className="flex items-start gap-2.5">
+        <input
+          id="terms-consent"
+          type="checkbox"
+          checked={termsAgreed}
+          onChange={(event) => setTermsAgreed(event.target.checked)}
+          required
+          className="mt-0.5 h-4 w-4 shrink-0 accent-[color:var(--accent)]"
+        />
+        <span className="text-sm leading-relaxed text-muted">
+          <label htmlFor="terms-consent" className="cursor-pointer">
+            I agree to the{" "}
+          </label>
+          <Link
+            href="/terms-of-service"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-accent underline-offset-4 hover:underline"
+          >
+            Terms of Service
+          </Link>
+          <label htmlFor="terms-consent" className="cursor-pointer">
+            {" "}and{" "}
+          </label>
+          <Link
+            href="/privacy-policy"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-accent underline-offset-4 hover:underline"
+          >
+            Privacy Policy
+          </Link>
+          <label htmlFor="terms-consent" className="cursor-pointer">.</label>
+        </span>
+      </div>
+
+      <div className="flex items-start gap-2.5">
+        <input
+          id="newsletter-optin"
+          type="checkbox"
+          checked={newsletterOptIn}
+          onChange={(event) => setNewsletterOptIn(event.target.checked)}
+          className="mt-0.5 h-4 w-4 shrink-0 accent-[color:var(--accent)]"
+        />
+        <label htmlFor="newsletter-optin" className="cursor-pointer text-sm leading-relaxed text-muted">
+          Send me the occasional Inkora letter with new writing and product updates.
+          Optional - you can unsubscribe anytime.
+        </label>
+      </div>
 
       <button
         type="submit"

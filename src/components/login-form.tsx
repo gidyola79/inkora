@@ -118,7 +118,15 @@ export function LoginForm() {
       </label>
 
       <label className="flex flex-col gap-1.5">
-        <span className="label">Password</span>
+        <span className="flex items-center justify-between">
+          <span className="label">Password</span>
+          <Link
+            href="/forgot-password"
+            className="text-xs text-muted underline-offset-4 transition-colors hover:text-foreground hover:underline"
+          >
+            Forgot password?
+          </Link>
+        </span>
         <div className="relative">
           <svg
             viewBox="0 0 24 24"

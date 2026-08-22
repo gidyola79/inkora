@@ -743,7 +743,8 @@ export async function changeEmailAction(
 export async function deleteAccountAction(
   _prevState: { success: boolean; message?: string },
   formData: FormData
-) {  const session = await requireUser();
+) {
+  const session = await requireUser();
 
   const password = String(formData.get("password") ?? "");
   const confirmed = formData.get("confirm") === "on";
@@ -771,4 +772,44 @@ export async function deleteAccountAction(
   }
 
   return { success: true, message: "Account deleted." };
+}
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export async function subscribeAction(
+  _prevState: { success: boolean; message?: string },
+  formData: FormData
+) {
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+
+  if (!EMAIL_PATTERN.test(email)) {
+    return { success: false, message: "Enter a valid email address." };
+  }
+
+  const existing = await prisma.subscriber.findUnique({ where: { email } });
+  if (existing) {
+    return {
+      success: true,
+      message: "You're already on the list. See you in your inbox!",
+    };
+  }
+
+  try {
+    await prisma.subscriber.create({ data: { email } });
+  } catch (error) {
+    console.error("Newsletter subscription failed:", error);
+    return { success: false, message: "Couldn't subscribe right now. Try again shortly." };
+  }
+
+  return { success: true, message: "Subscribed! A warm welcome to the Inkora letter." };
+}
+
+export async function optInToNewsletterAction(email: string) {
+  const normalized = email.trim().toLowerCase();
+  if (!EMAIL_PATTERN.test(normalized)) return;
+  await prisma.subscriber.upsert({
+    where: { email: normalized },
+    update: {},
+    create: { email: normalized },
+  });
 }

@@ -2,6 +2,12 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import { prisma } from "@/lib/prisma";
+import { passwordPolicy } from "@/lib/password-policy";
+import {
+  sendResetPasswordEmail,
+  sendVerificationEmail,
+  sendWelcomeEmail,
+} from "@/lib/email";
 
 async function generateUsername(email: string): Promise<string> {
   const base =
@@ -28,6 +34,16 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     autoSignIn: true,
+    minPasswordLength: 8,
+    sendResetPassword: async ({ user, url }) => {
+      await sendResetPasswordEmail({ to: user.email, name: user.name, url });
+    },
+  },
+  emailVerification: {
+    autoSignInAfterVerification: true,
+    sendVerificationEmail: async ({ user, url }) => {
+      await sendVerificationEmail({ to: user.email, name: user.name, url });
+    },
   },
   user: {
     additionalFields: {
@@ -45,6 +61,18 @@ export const auth = betterAuth({
           const username = await generateUsername(user.email);
           return { data: { username } };
         },
+        after: async (user) => {
+          if (!user.email) return;
+          const username = await prisma.user.findUnique({
+            where: { id: user.id },
+            select: { username: true },
+          });
+          await sendWelcomeEmail({
+            to: user.email,
+            name: user.name,
+            username: username?.username,
+          });
+        },
       },
     },
   },
@@ -53,7 +81,7 @@ export const auth = betterAuth({
       joins: true,
     },
   },
-  plugins: [nextCookies()],
+  plugins: [nextCookies(), passwordPolicy()],
   secret: process.env.BETTER_AUTH_SECRET,
   baseURL: process.env.BETTER_AUTH_URL,
 });

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/logo";
+import { NewsletterForm } from "@/components/newsletter-form";
 
 export function Footer() {
   return (
@@ -12,6 +13,8 @@ export function Footer() {
               A home for ideas worth sharing. Write, publish, and be heard.
             </p>
           </div>
+
+          <NewsletterForm />
 
           <div className="flex flex-col gap-4 sm:flex-row sm:gap-16">
             <div>
@@ -27,6 +30,11 @@ export function Footer() {
                 <li>
                   <Link href="/search" className="text-muted transition-colors hover:text-foreground">
                     Search
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/faq" className="text-muted transition-colors hover:text-foreground">
+                    FAQ
                   </Link>
                 </li>
               </ul>
@@ -59,6 +67,30 @@ export function Footer() {
                     className="text-muted transition-colors hover:text-foreground"
                   >
                     Dashboard
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted">
+                Legal
+              </p>
+              <ul className="mt-3 space-y-2 text-sm">
+                <li>
+                  <Link
+                    href="/privacy-policy"
+                    className="text-muted transition-colors hover:text-foreground"
+                  >
+                    Privacy Policy
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/terms-of-service"
+                    className="text-muted transition-colors hover:text-foreground"
+                  >
+                    Terms of Service
                   </Link>
                 </li>
               </ul>
