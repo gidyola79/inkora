@@ -284,7 +284,14 @@ const conversationPartnerSelect = {
   username: true,
   image: true,
   publicKey: true,
+  showOnlineStatus: true,
+  lastSeenAt: true,
 } as const;
+
+export function isUserOnline(user: { showOnlineStatus: boolean | null; lastSeenAt: Date | null } | null): boolean {
+  if (!user || !user.showOnlineStatus || !user.lastSeenAt) return false;
+  return Date.now() - new Date(user.lastSeenAt).getTime() < 3 * 60 * 1000;
+}
 
 export async function getConversationsForUser(userId: string) {
   const conversations = await prisma.conversation.findMany({

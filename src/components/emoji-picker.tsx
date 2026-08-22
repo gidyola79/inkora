@@ -68,9 +68,9 @@ export function EmojiPicker({
         <div
           role="dialog"
           aria-label="Choose an emoji"
-          className="absolute bottom-full right-0 z-20 mb-2 w-64 rounded-xl border border-border bg-card p-2 shadow-lg"
+          className="absolute bottom-full right-0 z-20 mb-2 max-h-[min(42vh,20rem)] w-72 max-w-[calc(100vw-1rem)] overflow-y-auto overscroll-contain rounded-xl border border-border bg-card p-2 shadow-lg sm:w-64"
         >
-          <div className="grid grid-cols-8 gap-0.5">
+          <div className="grid grid-cols-7 gap-0.5 sm:grid-cols-8">
             {EMOJIS.map((emoji) => (
               <button
                 key={emoji}

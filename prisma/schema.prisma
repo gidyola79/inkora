@@ -32,10 +32,12 @@ model User {
   dob                  DateTime?
   phone                String?
   gender               String?
-  publicKey            String?
-  notificationsEnabled Boolean   @default(true)
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
+   publicKey            String?
+   notificationsEnabled Boolean   @default(true)
+   showOnlineStatus     Boolean   @default(true)
+   lastSeenAt           DateTime?
+   createdAt            DateTime  @default(now())
+   updatedAt            DateTime  @updatedAt
 
   sessions          Session[]
   accounts          Account[]
@@ -249,6 +251,7 @@ model Message {
   encryptedContent String
   nonce            String
   createdAt        DateTime @default(now())
+  deliveredAt      DateTime?
   readAt           DateTime?
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)

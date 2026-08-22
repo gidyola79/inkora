@@ -7,6 +7,7 @@ import { EmailForm } from "@/components/email-form";
 import { PasswordForm } from "@/components/password-form";
 import { DangerZone } from "@/components/danger-zone";
 import { E2eeSetup } from "@/components/e2ee-setup";
+import { OnlineToggle } from "@/components/online-toggle";
 
 export const metadata: Metadata = { title: "Profile settings" };
 
@@ -14,7 +15,7 @@ export default async function ProfileSettingsPage() {
   const session = await requireUser();
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: {
+      select: {
       name: true,
       username: true,
       bio: true,
@@ -23,6 +24,7 @@ export default async function ProfileSettingsPage() {
       phone: true,
       gender: true,
       publicKey: true,
+      showOnlineStatus: true,
     },
   });
 
@@ -73,6 +75,10 @@ export default async function ProfileSettingsPage() {
 
       <div className="mt-6">
         <E2eeSetup hasPublicKey={Boolean(user.publicKey)} />
+      </div>
+
+      <div className="mt-6">
+        <OnlineToggle enabled={Boolean(user.showOnlineStatus)} />
       </div>
 
       <div className="card mt-6 border-danger/40 p-6">

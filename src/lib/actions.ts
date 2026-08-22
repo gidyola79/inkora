@@ -835,6 +835,34 @@ export async function markMessagesReadSilent(conversationId: string, userId: str
   });
 }
 
+export async function markMessagesDeliveredSilent(conversationId: string, userId: string): Promise<void> {
+  await prisma.message.updateMany({
+    where: {
+      conversationId,
+      senderId: { not: userId },
+      deliveredAt: null,
+    },
+    data: { deliveredAt: new Date() },
+  });
+}
+
+export async function toggleShowOnlineStatusAction(): Promise<boolean> {
+  const session = await requireUser();
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { showOnlineStatus: true },
+  });
+  if (!user) return false;
+  const next = !user.showOnlineStatus;
+  await prisma.user.update({
+    where: { id: session.user.id },
+    data: { showOnlineStatus: next, lastSeenAt: new Date() },
+  });
+  revalidatePath("/messages");
+  revalidatePath("/dashboard/profile");
+  return next;
+}
+
 export async function changeEmailAction(
   _prevState: { success: boolean; message?: string },
   formData: FormData

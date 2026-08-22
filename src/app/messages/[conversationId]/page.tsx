@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth-helpers";
 import { getConversationForUser } from "@/lib/data";
 import { ChatWindow } from "@/components/chat-window";
-import { markMessagesReadSilent } from "@/lib/actions";
+import { markMessagesDeliveredSilent, markMessagesReadSilent } from "@/lib/actions";
 
 export async function generateMetadata(): Promise<Metadata> {
   return { title: "Conversation" };
@@ -21,10 +21,11 @@ export default async function ConversationPage({
   const conversation = await getConversationForUser(conversationId, session.user.id);
   if (!conversation || !conversation.other) notFound();
 
+  await markMessagesDeliveredSilent(conversationId, session.user.id);
   await markMessagesReadSilent(conversationId, session.user.id);
 
   return (
-    <section className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
+    <section className="mx-auto w-full max-w-5xl px-2 py-4 sm:px-6 sm:py-6 flex flex-col flex-1">
       <div className="mb-4 flex items-center gap-2 text-sm text-muted">
         <Link href="/messages" className="inline-flex items-center gap-1 transition-colors hover:text-foreground">
           <svg
@@ -48,13 +49,15 @@ export default async function ConversationPage({
       <ChatWindow
         conversationId={conversation.id}
         myUserId={session.user.id}
-        other={conversation.other}
+        other={conversation.other as never}
         messages={conversation.messages.map((message) => ({
           id: message.id,
           senderId: message.senderId,
           encryptedContent: message.encryptedContent,
           nonce: message.nonce,
           createdAt: message.createdAt.toISOString(),
+          deliveredAt: (message as unknown as { deliveredAt: Date | null }).deliveredAt?.toISOString() ?? null,
+          readAt: message.readAt?.toISOString() ?? null,
         }))}
       />
     </section>
