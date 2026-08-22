@@ -219,6 +219,18 @@ export async function getUnreadNotificationCount(userId: string) {
   return prisma.notification.count({ where: { userId, readAt: null } });
 }
 
+export async function getRecentNotifications(userId: string) {
+  return prisma.notification.findMany({
+    where: { userId },
+    include: {
+      actor: { select: authorSelect },
+      article: { select: { id: true, title: true, slug: true } },
+    },
+    orderBy: { createdAt: "desc" },
+    take: 5,
+  });
+}
+
 export async function getArticleEngagement(articleId: string, userId: string) {
   const [commentCount, repostCount, likeCount, liked, reposted] = await Promise.all([
     prisma.comment.count({ where: { articleId } }),
