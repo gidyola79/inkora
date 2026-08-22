@@ -104,7 +104,11 @@ export async function POST(request: Request) {
     return Response.json({ url: result.secure_url });
   } catch (error) {
     console.error("[upload] Cloudinary upload failed:", error);
-    const detail = error instanceof Error ? error.message : String(error);
+    const detail = error instanceof Error
+      ? error.message
+      : typeof error === "object" && error !== null && "message" in error
+        ? String((error as { message: unknown }).message)
+        : String(error);
     const message = /invalid|signature|api[_ ]?key|unauthor|denied|auth/i.test(detail)
       ? "Upload service rejected the credentials - check the Cloudinary configuration."
       : "Upload failed. Please try again.";
