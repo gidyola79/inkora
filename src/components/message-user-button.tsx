@@ -17,7 +17,8 @@ export function MessageUserButton({
 
   function handleClick() {
     if (!signedIn) {
-      router.push("/login");
+      const here = window.location.pathname;
+      router.push(`/login?next=${encodeURIComponent(here)}`);
       return;
     }
     const formData = new FormData();

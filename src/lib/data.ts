@@ -54,8 +54,11 @@ export async function searchPublishedArticles(query: string): Promise<ArticleWit
     where: {
       status: "PUBLISHED",
       OR: [
-        { title: { contains: trimmed } },
-        { excerpt: { contains: trimmed } },
+        { title: { contains: trimmed, mode: "insensitive" } },
+        { excerpt: { contains: trimmed, mode: "insensitive" } },
+        { content: { contains: trimmed, mode: "insensitive" } },
+        { author: { name: { contains: trimmed, mode: "insensitive" } } },
+        { author: { username: { contains: trimmed, mode: "insensitive" } } },
       ],
     },
     include: { author: { select: authorSelect } },
@@ -243,14 +246,14 @@ export async function getArticleEngagement(articleId: string, userId: string) {
 }
 
 export async function getExploreUsers(search?: string) {
-  const trimmed = search?.trim();
+  const trimmed = search?.trim().replace(/^@+/, "");
   return prisma.user.findMany({
     where: {
       ...(trimmed
         ? {
             OR: [
-              { name: { contains: trimmed } },
-              { username: { contains: trimmed } },
+              { name: { contains: trimmed, mode: "insensitive" } },
+              { username: { contains: trimmed, mode: "insensitive" } },
             ],
           }
         : {}),
