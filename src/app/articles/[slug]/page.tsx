@@ -9,6 +9,7 @@ import { MarkdownRenderer } from "@/components/markdown";
 import { ArticleActions } from "@/components/article-actions";
 import { CommentSection } from "@/components/comment-section";
 import { FollowButton } from "@/components/follow-button";
+import { ShareAsImage } from "@/components/share-as-image";
 import { isFollowing, getFollowStats } from "@/lib/data";
 
 export async function generateMetadata({
@@ -155,6 +156,7 @@ export default async function ArticlePage({
           reposted={engagement.reposted}
           signedIn={Boolean(user)}
         />
+        <ShareAsImage articleId={article.id} title={article.title} />
       </div>
 
       <div className="mt-8 flex items-center justify-between gap-4 rounded-2xl border border-border bg-card p-5">

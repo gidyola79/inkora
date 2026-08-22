@@ -65,12 +65,15 @@ export function EmojiPicker({
       </button>
 
       {open && (
-        <div
-          role="dialog"
-          aria-label="Choose an emoji"
-          className="absolute bottom-full right-0 z-20 mb-2 max-h-[min(42vh,20rem)] w-72 max-w-[calc(100vw-1rem)] overflow-y-auto overscroll-contain rounded-xl border border-border bg-card p-2 shadow-lg sm:w-64"
-        >
-          <div className="grid grid-cols-7 gap-0.5 sm:grid-cols-8">
+        <>
+          <div className="fixed inset-0 z-10 sm:hidden" onClick={() => setOpen(false)} aria-hidden="true" />
+          <div
+            role="dialog"
+            aria-label="Choose an emoji"
+            className="fixed bottom-4 left-1/2 z-20 max-h-[min(48dvh,22rem)] w-[min(22rem,calc(100vw-1rem))] -translate-x-1/2 overflow-y-auto overscroll-contain rounded-2xl border border-border bg-card p-3 shadow-2xl sm:absolute sm:bottom-full sm:left-auto sm:right-0 sm:w-72 sm:max-w-[calc(100vw-1rem)] sm:translate-x-0 sm:p-2 sm:shadow-lg"
+          >
+            <div className="mb-2 hidden text-center text-xs font-medium text-muted sm:block">Tap to insert — scroll for more</div>
+            <div className="grid grid-cols-8 gap-1 sm:grid-cols-8 sm:gap-0.5">
             {EMOJIS.map((emoji) => (
               <button
                 key={emoji}
@@ -80,13 +83,15 @@ export function EmojiPicker({
                   onPick(emoji);
                   setOpen(false);
                 }}
-                className="flex h-7 w-7 items-center justify-center rounded-md text-lg leading-none transition-colors hover:bg-border/60"
+                className="flex h-9 w-9 items-center justify-center rounded-xl text-xl leading-none transition-colors hover:bg-border/60 active:scale-95 sm:h-8 sm:w-8 sm:text-lg"
               >
                 {emoji}
               </button>
             ))}
           </div>
+          <button onClick={() => setOpen(false)} className="btn btn-ghost btn-sm mt-3 w-full sm:hidden">Close</button>
         </div>
+        </>
       )}
     </div>
   );
